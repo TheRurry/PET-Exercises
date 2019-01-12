@@ -8,7 +8,7 @@
 # $ py.test-2.7 -v Lab01Tests.py 
 
 ###########################
-# Group Members: TODO
+# Group Members: Ryan Collins and Javier Pascual Mesa
 ###########################
 
 
@@ -234,7 +234,8 @@ def ecdsa_sign(G, priv_sign, message):
     plaintext =  message.encode("utf8")
 
     ## YOUR CODE HERE
-
+    digest = sha256(plaintext).digest()
+    sig = do_ecdsa_sign(G, priv_sign, digest)
     return sig
 
 def ecdsa_verify(G, pub_verify, message, sig):
@@ -242,7 +243,8 @@ def ecdsa_verify(G, pub_verify, message, sig):
     plaintext =  message.encode("utf8")
 
     ## YOUR CODE HERE
-
+    digest = sha256(plaintext).digest()
+    res = do_ecdsa_verify(G, pub_verify, sig, digest)
     return res
 
 #####################################################
