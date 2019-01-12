@@ -36,6 +36,9 @@ def encrypt_message(K, message):
     plaintext = message.encode("utf8")
     
     ## YOUR CODE HERE
+    aes = Cipher.aes_128_gcm()
+    iv = urandom(16)
+    ciphertext, tag = aes.quick_gcm_enc(K, iv, plaintext)
 
     return (iv, ciphertext, tag)
 
@@ -45,6 +48,8 @@ def decrypt_message(K, iv, ciphertext, tag):
         In case the decryption fails, throw an exception.
     """
     ## YOUR CODE HERE
+    aes = Cipher.aes_128_gcm()
+    plain = aes.quick_gcm_dec(K, iv, ciphertext, tag)
 
     return plain.encode("utf8")
 
@@ -75,18 +80,15 @@ def is_point_on_curve(a, b, p, x, y):
     assert isinstance(a, Bn)
     assert isinstance(b, Bn)
     assert isinstance(p, Bn) and p > 0
-    assert (isinstance(x, Bn) and isinstance(y, Bn)) \
-           or (x == None and y == None)
+    assert (isinstance(x, Bn) and isinstance(y, Bn)) or (x == None and y == None)
 
-    if x == None and y == None:
-        return True
+    if (isinstance(x, Bn) and isinstance(y, Bn)):
+        lhs = (y * y) % p
+        rhs = (x*x*x + a*x + b) % p
+        on_curve = (lhs == rhs)
+        return on_curve
 
-    lhs = (y * y) % p
-    rhs = (x*x*x + a*x + b) % p
-    on_curve = (lhs == rhs)
-
-    return on_curve
-
+    return True
 
 def point_add(a, b, p, x0, y0, x1, y1):
     """Define the "addition" operation for 2 EC Points.
@@ -101,9 +103,31 @@ def point_add(a, b, p, x0, y0, x1, y1):
     """
 
     # ADD YOUR CODE BELOW
-    xr, yr = None, None
-    
-    return (xr, yr)
+    assert isinstance(a, Bn)
+    assert isinstance(b, Bn)
+    assert isinstance(p, Bn) and p > 0
+    assert (isinstance(x0, Bn) and isinstance(y0, Bn)) or (x0 == None and y0 == None)
+    assert (isinstance(x1, Bn) and isinstance(y1, Bn)) or (x1 == None and y1 == None)
+
+    if (isinstance(x0, Bn) and isinstance(y0, Bn)) and (isinstance(x1, Bn) and isinstance(y1, Bn)):
+        if (x0 == x1):
+            if (y0 == y1):
+                raise ArithmeticError("EC Points must not be equal")
+            elif (y0 == p-y1):
+                return (None, None)
+        else:
+            lam = (y1.mod_sub(y0, p)).mod_mul(((x1.mod_sub(x0, p)).mod_inverse(p)), p)
+            xr = ((lam.mod_pow(2, p)).mod_sub(x0, p)).mod_sub(x1, p)
+            yr = (lam.mod_mul(x0.mod_sub(xr, p), p)).mod_sub(y0, p)
+            return (xr, yr)
+
+    if (isinstance(x0, Bn) and isinstance(y0, Bn)) and (x1 == None and y1 == None):
+        return (x0, y0)
+
+    if (x0 == None and y0 == None) and (isinstance(x1, Bn) and isinstance(y1, Bn)):
+        return (x1, y1)
+
+    return (None, None)
 
 def point_double(a, b, p, x, y):
     """Define "doubling" an EC point.
@@ -118,9 +142,17 @@ def point_double(a, b, p, x, y):
     """  
 
     # ADD YOUR CODE BELOW
-    xr, yr = None, None
+    assert isinstance(a, Bn)
+    assert isinstance(b, Bn)
+    assert isinstance(p, Bn) and p > 0
+    assert (isinstance(x, Bn) and isinstance(y, Bn)) or (x == None and y == None)
 
-    return xr, yr
+    if (isinstance(x, Bn) and isinstance(y, Bn)):
+        lam = (((x.mod_pow(2, p)).mod_mul(3, p)).mod_add(a, p)).mod_mul((y.mod_mul(2, p)).mod_inverse(p), p)
+        xr = (lam.mod_pow(2, p)).mod_sub(x.mod_mul(2, p), p)
+        yr = ((x.mod_sub(xr, p)).mod_mul(lam, p)).mod_sub(y, p)
+        return (xr, yr)
+    return (None, None)
 
 def point_scalar_multiplication_double_and_add(a, b, p, x, y, scalar):
     """
@@ -140,8 +172,9 @@ def point_scalar_multiplication_double_and_add(a, b, p, x, y, scalar):
     P = (x, y)
 
     for i in range(scalar.num_bits()):
-        pass ## ADD YOUR CODE HERE
-
+        if (scalar.is_bit_set(i)):
+            Q = point_add(a, b, p, Q[0], Q[1], P[0], P[1])
+        P = point_double(a, b, p, P[0], P[1])
     return Q
 
 def point_scalar_multiplication_montgomerry_ladder(a, b, p, x, y, scalar):
@@ -166,8 +199,12 @@ def point_scalar_multiplication_montgomerry_ladder(a, b, p, x, y, scalar):
     R1 = (x, y)
 
     for i in reversed(range(0,scalar.num_bits())):
-        pass ## ADD YOUR CODE HERE
-
+        if (scalar.is_bit_set(i)):
+            R0 = point_add(a, b, p, R0[0], R0[1], R1[0], R1[1])
+            R1 = point_double(a, b, p, R1[0], R1[1])
+        else:
+            R1 = point_add(a, b, p, R0[0], R0[1], R1[0], R1[1])
+            R0 = point_double(a, b, p, R0[0], R0[1])
     return R0
 
 
