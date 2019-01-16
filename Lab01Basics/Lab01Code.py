@@ -284,7 +284,7 @@ def dh_encrypt(pub, message, aliceSig = None):
     # Public key signing
     sig = None
     if (aliceSig is not None):
-        sig = ecdsa_sign(G, aliceSig, hexlify(alice_public_key.export()).decode("utf8"))
+        sig = ecdsa_sign(G, aliceSig, hexlify(alice_public_key.export()))
     return alice_public_key, sig, (iv, ciphertext, tag)
 
 # Bob
@@ -302,7 +302,7 @@ def dh_decrypt(priv, ciphertext, aliceVer = None):
     if (aliceVer is not None):
         if (aliceSig is None):
             raise ValueError("There is no signed public key")
-        if (not ecdsa_verify(G, aliceVer, hexlify(alice_public_key.export()).decode("utf8"), aliceSig)):
+        if (not ecdsa_verify(G, aliceVer, hexlify(alice_public_key.export()), aliceSig)):
             raise ValueError("Signed public key can not be verified")
 
     # Ciphertext decryption
