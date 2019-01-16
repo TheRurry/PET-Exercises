@@ -29,6 +29,7 @@ import petlib
 
 from os import urandom
 from petlib.cipher import Cipher
+from binascii import hexlify
 
 def encrypt_message(K, message):
     """ Encrypt a message under a key K """
@@ -262,7 +263,7 @@ def dh_get_key():
     pub_enc = priv_dec * G.generator()
     return (G, priv_dec, pub_enc)
 
-
+# Alice
 def dh_encrypt(pub, message, aliceSig = None):
     """ Assume you know the public key of someone else (Bob), 
     and wish to Encrypt a message for them.
@@ -273,29 +274,128 @@ def dh_encrypt(pub, message, aliceSig = None):
     """
     
     ## YOUR CODE HERE
-    pass
+    bob_public_key = pub
 
+    # Ciphertext encryption
+    G, alice_private_key, alice_public_key = dh_get_key()
+    shared_key = (alice_private_key * bob_public_key).export()[:16]
+    iv, ciphertext, tag = encrypt_message(shared_key, message)
+
+    # Public key signing
+    sig = None
+    if (aliceSig is not None):
+        sig = ecdsa_sign(G, aliceSig, hexlify(alice_public_key.export()).decode("utf8"))
+    return alice_public_key, sig, (iv, ciphertext, tag)
+
+# Bob
 def dh_decrypt(priv, ciphertext, aliceVer = None):
     """ Decrypt a received message encrypted using your public key, 
     of which the private key is provided. Optionally verify 
     the message came from Alice using her verification key."""
     
     ## YOUR CODE HERE
-    pass
+    G = EcGroup()
+    bob_private_key = priv
+    alice_public_key, aliceSig, aead = ciphertext
+    
+    # Signature verification
+    if (aliceVer is not None):
+        if (aliceSig is None):
+            raise ValueError("There is no signed public key")
+        if (not ecdsa_verify(G, aliceVer, hexlify(alice_public_key.export()).decode("utf8"), aliceSig)):
+            raise ValueError("Signed public key can not be verified")
+
+    # Ciphertext decryption
+    shared_key = (bob_private_key * alice_public_key).export()[:16]
+    iv, encrypted_message, tag = aead
+    message = decrypt_message(shared_key, iv, encrypted_message, tag)
+    return message
 
 ## NOTE: populate those (or more) tests
 #  ensure they run using the "py.test filename" command.
 #  What is your test coverage? Where is it missing cases?
 #  $ py.test-2.7 --cov-report html --cov Lab01Code Lab01Code.py 
 
+def encrypt_no_signatures():
+    G, bob_private_key, bob_public_key = dh_get_key()
+    message = u"Hello World!"
+
+    # No signature assertions
+    ciphertext = dh_encrypt(bob_public_key, message)
+    # Check that return type is a tuple of length 3
+    assert len(ciphertext) == 3
+    # Check that a public key has been returned
+    assert ciphertext[0]
+    # Check that the public key has not been signed
+    assert ciphertext[1] == None
+    # Check that the cipher text is a tuple of length 3
+    assert len(ciphertext[2]) == 3
+
+    # AES_GCM encryption checks
+    iv, encrypted_message, tag = ciphertext[2]
+    assert len(iv) == 16
+    assert len(encrypted_message) == len(message)
+    assert len(tag) == 16
+
+def encrypt_with_signatures():
+    G, bob_private_key, bob_public_key = dh_get_key()
+    message = u"Hello World!"
+
+    # With signature assertions
+    G, aliceSig, aliceVer = ecdsa_key_gen()
+    ciphertext = dh_encrypt(bob_public_key, message, aliceSig)
+    # Check that return type is a tuple of length 3
+    assert len(ciphertext) == 3
+    # Check that a public key has been returned
+    assert ciphertext[0]
+    # Check that the public key has been signed
+    assert ciphertext[1]
+    # Check that the cipher text is a tuple of length 3
+    assert len(ciphertext[2]) == 3
+
+    # AES_GCM encryption checks
+    iv, encrypted_message, tag = ciphertext[2]
+    assert len(iv) == 16
+    assert len(encrypted_message) == len(message)
+    assert len(tag) == 16
+
 def test_encrypt():
-    assert False
+    encrypt_no_signatures()
+    encrypt_with_signatures()
 
 def test_decrypt():
-    assert False
+    G, bob_private_key, bob_public_key = dh_get_key()
+    message = u"Hello World!"
+
+    # No signature assertions
+    ciphertext = dh_encrypt(bob_public_key, message)
+    decrypted_message = dh_decrypt(bob_private_key, ciphertext)
+    assert message == decrypted_message
+
+    # With signature assertions
+    G, aliceSig, aliceVer = ecdsa_key_gen()
+    ciphertext = dh_encrypt(bob_public_key, message, aliceSig)
+    decrypted_message = dh_decrypt(bob_private_key, ciphertext, aliceVer)
+    assert message == decrypted_message
 
 def test_fails():
-    assert False
+    from pytest import raises
+    G, bob_private_key, bob_public_key = dh_get_key()
+    message = u"Hello World!"
+
+    # Message not signed, but verification required
+    G, aliceSig, aliceVer = ecdsa_key_gen()
+    ciphertext = dh_encrypt(bob_public_key, message)
+    with raises(Exception) as excinfo:
+        decrypted_message = dh_decrypt(bob_private_key, ciphertext, aliceVer)
+    assert "There is no signed public key" in str(excinfo.value)
+
+    # Signature can not be verified
+    ciphertext = dh_encrypt(bob_public_key, message, aliceSig)
+    G, aliceSig, aliceVer = ecdsa_key_gen()
+    with raises(Exception) as excinfo:
+        decrypted_message = dh_decrypt(bob_private_key, ciphertext, aliceVer)
+    assert "Signed public key can not be verified" in str(excinfo.value)
 
 #####################################################
 # TASK 6 -- Time EC scalar multiplication
