@@ -30,6 +30,9 @@ import petlib
 from os import urandom
 from petlib.cipher import Cipher
 from binascii import hexlify
+import time
+import numpy as np
+import matplotlib.pyplot as plt
 
 def encrypt_message(K, message):
     """ Encrypt a message under a key K """
@@ -83,12 +86,11 @@ def is_point_on_curve(a, b, p, x, y):
     assert isinstance(p, Bn) and p > 0
     assert (isinstance(x, Bn) and isinstance(y, Bn)) or (x == None and y == None)
 
-    if (isinstance(x, Bn) and isinstance(y, Bn)):
+    if (x is not None) and (y is not None):
         lhs = (y * y) % p
         rhs = (x*x*x + a*x + b) % p
         on_curve = (lhs == rhs)
         return on_curve
-
     return True
 
 def point_add(a, b, p, x0, y0, x1, y1):
@@ -110,25 +112,18 @@ def point_add(a, b, p, x0, y0, x1, y1):
     assert (isinstance(x0, Bn) and isinstance(y0, Bn)) or (x0 == None and y0 == None)
     assert (isinstance(x1, Bn) and isinstance(y1, Bn)) or (x1 == None and y1 == None)
 
-    if (isinstance(x0, Bn) and isinstance(y0, Bn)) and (isinstance(x1, Bn) and isinstance(y1, Bn)):
-        if (x0 == x1):
-            if (y0 == y1):
-                raise ArithmeticError("EC Points must not be equal")
-            elif (y0 == p-y1):
-                return (None, None)
-        else:
-            lam = (y1.mod_sub(y0, p)).mod_mul(((x1.mod_sub(x0, p)).mod_inverse(p)), p)
-            xr = ((lam.mod_pow(2, p)).mod_sub(x0, p)).mod_sub(x1, p)
-            yr = (lam.mod_mul(x0.mod_sub(xr, p), p)).mod_sub(y0, p)
-            return (xr, yr)
-
-    if (isinstance(x0, Bn) and isinstance(y0, Bn)) and (x1 == None and y1 == None):
+    if (x0 is not None and y0 is not None) and (x1 is None and y1 is None):
         return (x0, y0)
-
-    if (x0 == None and y0 == None) and (isinstance(x1, Bn) and isinstance(y1, Bn)):
+    if (x0 is None and y0 is None) and (x1 is not None and y1 is not None):
         return (x1, y1)
-
-    return (None, None)
+    if (x0 is x1) and (y0 is not y1):
+        return (None, None)
+    if (x0 is not x1) and (y0 is not y1):
+        lam = (y1.mod_sub(y0, p)).mod_mul(((x1.mod_sub(x0, p)).mod_inverse(p)), p)
+        xr = ((lam.mod_pow(2, p)).mod_sub(x0, p)).mod_sub(x1, p)
+        yr = (lam.mod_mul(x0.mod_sub(xr, p), p)).mod_sub(y0, p)
+        return (xr, yr) 
+    raise ArithmeticError("EC Points must not be equal")
 
 def point_double(a, b, p, x, y):
     """Define "doubling" an EC point.
@@ -148,7 +143,7 @@ def point_double(a, b, p, x, y):
     assert isinstance(p, Bn) and p > 0
     assert (isinstance(x, Bn) and isinstance(y, Bn)) or (x == None and y == None)
 
-    if (isinstance(x, Bn) and isinstance(y, Bn)):
+    if (x is not None) and (y is not None):
         lam = (((x.mod_pow(2, p)).mod_mul(3, p)).mod_add(a, p)).mod_mul((y.mod_mul(2, p)).mod_inverse(p), p)
         xr = (lam.mod_pow(2, p)).mod_sub(x.mod_mul(2, p), p)
         yr = ((x.mod_sub(xr, p)).mod_mul(lam, p)).mod_sub(y, p)
@@ -169,12 +164,50 @@ def point_scalar_multiplication_double_and_add(a, b, p, x, y, scalar):
         return Q
 
     """
+    assert isinstance(a, Bn)
+    assert isinstance(b, Bn)
+    assert isinstance(p, Bn) and p > 0
+    assert (isinstance(x, Bn) and isinstance(y, Bn)) or (x == None and y == None)
+    assert isinstance(scalar, Bn)
+
     Q = (None, None)
     P = (x, y)
 
     for i in range(scalar.num_bits()):
         if (scalar.is_bit_set(i)):
             Q = point_add(a, b, p, Q[0], Q[1], P[0], P[1])
+        P = point_double(a, b, p, P[0], P[1])
+    return Q
+
+def fixed_point_scalar_multiplication_double_and_add(a, b, p, x, y, scalar):
+    """
+    Implement Point multiplication with a scalar:
+        r * (x, y) = (x, y) + ... + (x, y)    (r times)
+
+    Reminder of Double and Multiply algorithm: r * P
+        Q = infinity
+        for i = 0 to num_bits(P)-1
+            if bit i of r == 1 then
+                Q = Q + P
+            P = 2 * P
+        return Q
+
+    """
+    assert isinstance(a, Bn)
+    assert isinstance(b, Bn)
+    assert isinstance(p, Bn) and p > 0
+    assert (isinstance(x, Bn) and isinstance(y, Bn)) or (x == None and y == None)
+    assert isinstance(scalar, Bn)
+
+    Q = (None, None)
+    R = (None, None)
+    P = (x, y)
+
+    for i in range(scalar.num_bits()):
+        if (scalar.is_bit_set(i)):
+            Q = point_add(a, b, p, Q[0], Q[1], P[0], P[1])
+        else:
+            R = point_add(a, b, p, R[0], R[1], P[0], P[1])
         P = point_double(a, b, p, P[0], P[1])
     return Q
 
@@ -196,6 +229,12 @@ def point_scalar_multiplication_montgomerry_ladder(a, b, p, x, y, scalar):
         return R0
 
     """
+    assert isinstance(a, Bn)
+    assert isinstance(b, Bn)
+    assert isinstance(p, Bn) and p > 0
+    assert (isinstance(x, Bn) and isinstance(y, Bn)) or (x == None and y == None)
+    assert isinstance(scalar, Bn)
+
     R0 = (None, None)
     R1 = (x, y)
 
@@ -228,7 +267,6 @@ def ecdsa_key_gen():
     priv_sign = G.order().random()
     pub_verify = priv_sign * G.generator()
     return (G, priv_sign, pub_verify)
-
 
 def ecdsa_sign(G, priv_sign, message):
     """ Sign the SHA256 digest of the message using ECDSA and return a signature """
@@ -407,5 +445,56 @@ def test_fails():
 #           - Print reports on timing dependencies on secrets.
 #           - Fix one implementation to not leak information.
 
+# To test task 6 run "python Lab01Code.py", and after ~5 mins of run time graphs should be generated.
+# From the graphs we can see that double and add is leaking information on the amount of bits set in
+# the scalar used, whereas montgomerry ladder is not. In order to fix this we do similar to montgommery
+# ladder and ensure the same amount of doubles and adds occur each step of the algorithm. 
+# See "fixed_point_scalar_multiplication_double_and_add" for the implementation of this fix.
+
+def get_time_dif(mul, args):
+    before = time.clock()
+    mul(*args)
+    after = time.clock()
+    return after - before
+
 def time_scalar_mul():
-    pass
+    # Get EC Parameters
+    G = EcGroup(713)
+    d = G.parameters()
+    a, b, p = d["a"], d["b"], d["p"]
+    g = G.generator()
+    x, y = g.get_affine()
+
+    # Generate graph data
+    double_add = list()
+    fixed_double_add = list()
+    montgomerry_ladder = list()
+    n = 500
+    bits_set = range(1, n)
+    for i in bits_set:
+        scalar = Bn.from_decimal(("1"*i) + ("0"*(n-i-1)))
+        print i, scalar
+        double_add.append(get_time_dif(point_scalar_multiplication_double_and_add, (a, b, p, x, y, scalar)))
+        fixed_double_add.append(get_time_dif(fixed_point_scalar_multiplication_double_and_add, (a, b, p, x, y, scalar)))
+        montgomerry_ladder.append(get_time_dif(point_scalar_multiplication_montgomerry_ladder, (a, b, p, x, y, scalar)))
+    
+    fig = plt.figure("Runtime graphs")
+
+    ax = plt.subplot("221")
+    ax.set_title("Double and Add")
+    ax.plot(bits_set, double_add)
+
+    ax = plt.subplot("222")
+    ax.set_title("Montgomerry Ladder")
+    ax.plot(bits_set, montgomerry_ladder)
+    
+    ax = plt.subplot("223")
+    ax.set_title("Fixed Double and Add")
+    ax.plot(bits_set, fixed_double_add)
+
+    plt.xlabel("Number of bits set")
+    plt.ylabel("Time taken to multiply")
+    plt.show()
+
+if __name__ == "__main__":
+    time_scalar_mul()
