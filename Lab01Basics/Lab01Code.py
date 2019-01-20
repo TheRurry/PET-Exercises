@@ -18,6 +18,7 @@
 #           be imported.
 
 import petlib
+# NOTE: Test coverage only supports tasks 1 - 5 hence why it is shows coverage at 80%
 
 #####################################################
 # TASK 2 -- Symmetric encryption using AES-GCM 
@@ -33,6 +34,7 @@ from binascii import hexlify
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 
 def encrypt_message(K, message):
     """ Encrypt a message under a key K """
@@ -477,24 +479,32 @@ def time_scalar_mul():
         double_add.append(get_time_dif(point_scalar_multiplication_double_and_add, (a, b, p, x, y, scalar)))
         fixed_double_add.append(get_time_dif(fixed_point_scalar_multiplication_double_and_add, (a, b, p, x, y, scalar)))
         montgomerry_ladder.append(get_time_dif(point_scalar_multiplication_montgomerry_ladder, (a, b, p, x, y, scalar)))
-    
+
     fig = plt.figure("Runtime graphs")
 
-    ax = plt.subplot("221")
+    gs = gridspec.GridSpec(4, 4)
+
+    ax = plt.subplot(gs[0:2, 0:2])
     ax.set_title("Double and Add")
     ax.plot(bits_set, double_add)
+    ax.set_xlabel("Number of bits set")
+    ax.set_ylabel("Time taken to multiply")
 
-    ax = plt.subplot("222")
+    ax = plt.subplot(gs[0:2, 2:])
     ax.set_title("Montgomerry Ladder")
     ax.plot(bits_set, montgomerry_ladder)
-    
-    ax = plt.subplot("223")
+    ax.set_xlabel("Number of bits set")
+    ax.set_ylabel("Time taken to multiply")
+
+    ax = plt.subplot(gs[2:4, 1:3])
     ax.set_title("Fixed Double and Add")
     ax.plot(bits_set, fixed_double_add)
+    ax.set_xlabel("Number of bits set")
+    ax.set_ylabel("Time taken to multiply")
 
-    plt.xlabel("Number of bits set")
-    plt.ylabel("Time taken to multiply")
+    gs.tight_layout(fig)
+    
     plt.show()
-
+    
 if __name__ == "__main__":
     time_scalar_mul()
