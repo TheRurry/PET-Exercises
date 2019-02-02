@@ -204,9 +204,8 @@ def mix_server_n_hop(private_key, message_list, final=False):
         message_key = key_material[32:48]
 
         # Extract a blinding factor for the public_key
-        # blinding_factor = Bn.from_binary(key_material[48:])
-        # new_ec_public_key = blinding_factor * msg.ec_public_key
-        new_ec_public_key = msg.ec_public_key
+        blinding_factor = Bn.from_binary(key_material[48:])
+        new_ec_public_key = blinding_factor * msg.ec_public_key
 
         ## Check the HMAC
         h = Hmac(b"sha512", hmac_key)
@@ -278,10 +277,18 @@ def mix_client_n_hop(public_keys, address, message):
     client_public_key  = private_key * G.generator()
 
     ## ADD CODE HERE
+    private_keys = list()
+    for public_key in public_keys:
+        private_keys.append(private_key)
+        shared_element = private_key * public_key
+        key_material = sha512(shared_element.export()).digest()
+        blinding_factor = Bn.from_binary(key_material[48:])
+        private_key = blinding_factor * private_key
+
     hmacs = list()
     address_cipher = address_plaintext
     message_cipher = message_plaintext
-    for public_key in reversed(public_keys):
+    for private_key, public_key in reversed(zip(private_keys, public_keys)):
         shared_element = private_key * public_key
         key_material = sha512(shared_element.export()).digest()
 
