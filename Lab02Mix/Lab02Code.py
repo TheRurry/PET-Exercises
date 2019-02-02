@@ -128,22 +128,25 @@ def mix_client_one_hop(public_key, address, message):
     address_plaintext = pack("!H256s", len(address), address)
     message_plaintext = pack("!H1000s", len(message), message)
 
-    ## Generate a fresh public key
+    # Generate a fresh public key
     private_key = G.order().random()
     client_public_key  = private_key * G.generator()
 
-    ## ADD CODE HERE
+    # Get a shared key
     shared_element = private_key * public_key
     key_material = sha512(shared_element.export()).digest()
 
+    # Use different parts of the shared key for different operations
     hmac_key = key_material[:16]
     address_key = key_material[16:32]
     message_key = key_material[32:48]
 
+    # Encrypt the address and the message
     iv = b"\x00"*16
     address_cipher = aes_ctr_enc_dec(address_key, iv, address_plaintext)
     message_cipher = aes_ctr_enc_dec(message_key, iv, message_plaintext)
 
+    # Generate the HMAC
     h = Hmac(b"sha512", hmac_key)        
     h.update(address_cipher)
     h.update(message_cipher)
@@ -276,12 +279,17 @@ def mix_client_n_hop(public_keys, address, message):
     private_key = G.order().random()
     client_public_key  = private_key * G.generator()
 
-    ## ADD CODE HERE
+    # Get list of private keys multiplied with bliding factors
     private_keys = list()
     for public_key in public_keys:
+        # Add private key to list
         private_keys.append(private_key)
+
+        # Get shared key
         shared_element = private_key * public_key
         key_material = sha512(shared_element.export()).digest()
+
+        # Extract a blinding factor for the private_key
         blinding_factor = Bn.from_binary(key_material[48:])
         private_key = blinding_factor * private_key
 
@@ -289,6 +297,7 @@ def mix_client_n_hop(public_keys, address, message):
     address_cipher = address_plaintext
     message_cipher = message_plaintext
     for private_key, public_key in reversed(zip(private_keys, public_keys)):
+        # Get shared key
         shared_element = private_key * public_key
         key_material = sha512(shared_element.export()).digest()
 
@@ -358,19 +367,37 @@ def analyze_trace(trace, target_number_of_friends, target=0):
     friends of the target.
     """
 
-    ## ADD CODE HERE
-
-    return []
+    possible_friends = list()
+    for senders, receivers in trace:
+        if 0 in senders:
+            # Add receivers to possible_friends if 0 is a sender
+            possible_friends += [receiver for receiver in receivers if receiver != 0]
+    
+    # Return the most common elements in possible_friends
+    return [friend for friend, _ in Counter(possible_friends).most_common(target_number_of_friends)]
 
 ## TASK Q1 (Question 1): The mix packet format you worked on uses AES-CTR with an IV set to all zeros. 
 #                        Explain whether this is a security concern and justify your answer.
 
-""" TODO: Your answer HERE """
+""" 
+AES-CTR works by using AES on the key and IV, and then XORing the resulting key stream with the plaintext or ciphertext, for encryption
+and decryption respectively.
+
+Since the IV is always set to all zeroes, the same key stream is used for every encryption and decryption operation.
+
+This means an attacker simply needs to XOR a ciphertext and its corresponding plaintext to get the keystream used for encryption and decryption.
+"""
 
 
 ## TASK Q2 (Question 2): What assumptions does your implementation of the Statistical Disclosure Attack 
 #                        makes about the distribution of traffic from non-target senders to receivers? Is
 #                        the correctness of the result returned dependent on this background distribution?
 
-""" TODO: Your answer HERE """
+"""
+My implementation of the Statistical Disclosure Attack is assuming for each (senders, receivers) pair, each sender is communcating with 
+a unique receiver.
+
+Otherwise in a scenario where several senders are communcating with a receiver "a" who is not a friend of the target, but the target was
+communcating with 
+"""
 
