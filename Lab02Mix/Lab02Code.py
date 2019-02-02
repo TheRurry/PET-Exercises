@@ -278,8 +278,6 @@ def mix_client_n_hop(public_keys, address, message):
     client_public_key  = private_key * G.generator()
 
     ## ADD CODE HERE
-    new_keys = list()
-
     hmacs = list()
     address_cipher = address_plaintext
     message_cipher = message_plaintext
