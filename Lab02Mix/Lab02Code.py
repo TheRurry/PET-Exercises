@@ -204,8 +204,9 @@ def mix_server_n_hop(private_key, message_list, final=False):
         message_key = key_material[32:48]
 
         # Extract a blinding factor for the public_key
-        blinding_factor = Bn.from_binary(key_material[48:])
-        new_ec_public_key = blinding_factor * msg.ec_public_key
+        # blinding_factor = Bn.from_binary(key_material[48:])
+        # new_ec_public_key = blinding_factor * msg.ec_public_key
+        new_ec_public_key = msg.ec_public_key
 
         ## Check the HMAC
         h = Hmac(b"sha512", hmac_key)
@@ -277,6 +278,32 @@ def mix_client_n_hop(public_keys, address, message):
     client_public_key  = private_key * G.generator()
 
     ## ADD CODE HERE
+    new_keys = list()
+
+    hmacs = list()
+    address_cipher = address_plaintext
+    message_cipher = message_plaintext
+    for public_key in reversed(public_keys):
+        shared_element = private_key * public_key
+        key_material = sha512(shared_element.export()).digest()
+
+        hmac_key = key_material[:16]
+        address_key = key_material[16:32]
+        message_key = key_material[32:48]
+
+        iv = b"\x00"*16
+        address_cipher = aes_ctr_enc_dec(address_key, iv, address_cipher)
+        message_cipher = aes_ctr_enc_dec(message_key, iv, message_cipher)
+
+        h = Hmac(b"sha512", hmac_key)
+        for i in range(0, len(hmacs)):
+            iv = pack("H14s", i, b"\x00"*14)
+            hmacs[i] = aes_ctr_enc_dec(hmac_key, iv, hmacs[i])
+            h.update(hmacs[i])
+        h.update(address_cipher)
+        h.update(message_cipher)
+        expected_mac = h.digest()[:20]
+        hmacs = [expected_mac] + hmacs
 
     return NHopMixMessage(client_public_key, hmacs, address_cipher, message_cipher)
 
