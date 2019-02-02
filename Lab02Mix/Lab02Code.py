@@ -301,14 +301,17 @@ def mix_client_n_hop(public_keys, address, message):
         shared_element = private_key * public_key
         key_material = sha512(shared_element.export()).digest()
 
+        # Use different parts of the shared key for different operations
         hmac_key = key_material[:16]
         address_key = key_material[16:32]
         message_key = key_material[32:48]
 
+        # Encrypt address & message
         iv = b"\x00"*16
         address_cipher = aes_ctr_enc_dec(address_key, iv, address_cipher)
         message_cipher = aes_ctr_enc_dec(message_key, iv, message_cipher)
 
+        # Generate next HMAC and encrypt previous HMACs
         h = Hmac(b"sha512", hmac_key)
         for i in range(0, len(hmacs)):
             iv = pack("H14s", i, b"\x00"*14)
