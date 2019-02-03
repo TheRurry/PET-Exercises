@@ -320,7 +320,7 @@ def mix_client_n_hop(public_keys, address, message):
         h.update(address_cipher)
         h.update(message_cipher)
         expected_mac = h.digest()[:20]
-        hmacs = [expected_mac] + hmacs
+        hmacs.insert(0, expected_mac)
 
     return NHopMixMessage(client_public_key, hmacs, address_cipher, message_cipher)
 
@@ -372,10 +372,10 @@ def analyze_trace(trace, target_number_of_friends, target=0):
 
     possible_friends = Counter()
     for senders, receivers in trace:
-        if 0 in senders:
-            # Add receivers to possible_friends if 0 is a sender
+        if target in senders:
+            # Add receivers to possible_friends if the target is a sender
             possible_friends.update(receivers)
-            # NOTE This means 0 could be added to possible_friends, but the test seems to allow for this to be the case.
+            # NOTE This means the target could be added to possible_friends, but the test seems to allow for this to be the case.
     
     # Return the most common elements in possible_friends
     return [friend for friend, _ in possible_friends.most_common(target_number_of_friends)]
@@ -406,10 +406,10 @@ Although this is more expensive than a random IV, it results in the constant IV 
 
 """
 My implementation of the Statistical Disclosure Attack is assuming for each (senders, receivers) pair, each sender is communcating with 
-a unique receiver.
+a unique receiver, and other than the target sender, senders are communicating with random receivers.
 
-Otherwise there might be scenarios where several senders are communcating with one receiver who is not a friend of the target, 
-at the same times where the target is communicating with a friend.
+Otherwise we might find that one receiver is always receiving traffic not matter which random sample we take of senders, or that several 
+senders are communcating with one receiver who is not a friend of the target, at the same times where the target is communicating with a friend.
 
 It would be very likely with my implementation of the Statistical Disclosure Attack, the aforementioned receivers with a lot of traffic will
 be considered as possible friends.
