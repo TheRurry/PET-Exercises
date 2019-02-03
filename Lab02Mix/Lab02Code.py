@@ -384,19 +384,19 @@ def analyze_trace(trace, target_number_of_friends, target=0):
 #                        Explain whether this is a security concern and justify your answer.
 
 """ 
-The IV constantly being set to all zeroes is not a concern in this situation.
+The IV constantly being set to all zeroes is not a security concern in this situation.
 
 AES-CTR works by using AES on the key and IV, and then XORing the resulting key stream with the plaintext or ciphertext, for encryption
 and decryption respectively.
 
-In most cryptograhpic systems where key is kept the same for all encryptions and decryptions using the same IV, would mean that every AES_CTR
+In most cryptograhpic systems where key is kept the same for all encryptions and decryptions, using the same IV would mean that every AES-CTR
 encryption or decryption would be using the same key stream.
 
 An attacker with access to a ciphertext and its corresponding plaintext could simply XOR the two together to get the key stream, and would be 
 able to decrypt every other ciphertext.
 
 However in this situation we are deriving a new shared key from a fresh key pair with every communcation, so no two key streams will be the same.
-Although this is more expensive than a random IV, it still results in the constant IV as not being a security concern.
+Although this is more expensive than a random IV, it results in the constant IV as not being a security concern.
 """
 
 
@@ -412,6 +412,8 @@ Otherwise there might be scenarios where several senders are communcating with o
 at the same times where the target is communicating with a friend.
 
 It would be very likely with my implementation of the Statistical Disclosure Attack, the aforementioned receivers with a lot of traffic will
-be considered as possible friends. 
+be considered as possible friends.
+
+Therefore if the assumption of the background distribution does not hold, the correctness of the result would be reduced.
 """
 
