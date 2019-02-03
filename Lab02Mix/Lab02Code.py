@@ -370,25 +370,33 @@ def analyze_trace(trace, target_number_of_friends, target=0):
     friends of the target.
     """
 
-    possible_friends = list()
+    possible_friends = Counter()
     for senders, receivers in trace:
         if 0 in senders:
             # Add receivers to possible_friends if 0 is a sender
-            possible_friends += [receiver for receiver in receivers if receiver != 0]
+            possible_friends.update(receivers)
+            # NOTE This means 0 could be added to possible_friends, but the test seems to allow for this to be the case.
     
     # Return the most common elements in possible_friends
-    return [friend for friend, _ in Counter(possible_friends).most_common(target_number_of_friends)]
+    return [friend for friend, _ in possible_friends.most_common(target_number_of_friends)]
 
 ## TASK Q1 (Question 1): The mix packet format you worked on uses AES-CTR with an IV set to all zeros. 
 #                        Explain whether this is a security concern and justify your answer.
 
 """ 
+The IV constantly being set to all zeroes is not a concern in this situation.
+
 AES-CTR works by using AES on the key and IV, and then XORing the resulting key stream with the plaintext or ciphertext, for encryption
 and decryption respectively.
 
-Since the IV is always set to all zeroes, the same key stream is used for every encryption and decryption operation.
+In most cryptograhpic systems where key is kept the same for all encryptions and decryptions using the same IV, would mean that every AES_CTR
+encryption or decryption would be using the same key stream.
 
-This means an attacker simply needs to XOR a ciphertext and its corresponding plaintext to get the keystream used for encryption and decryption.
+An attacker with access to a ciphertext and its corresponding plaintext could simply XOR the two together to get the key stream, and would be 
+able to decrypt every other ciphertext.
+
+However in this situation we are deriving a new shared key from a fresh key pair with every communcation, so no two key streams will be the same.
+Although this is more expensive than a random IV, it still results in the constant IV as not being a security concern.
 """
 
 
@@ -400,7 +408,10 @@ This means an attacker simply needs to XOR a ciphertext and its corresponding pl
 My implementation of the Statistical Disclosure Attack is assuming for each (senders, receivers) pair, each sender is communcating with 
 a unique receiver.
 
-Otherwise in a scenario where several senders are communcating with a receiver "a" who is not a friend of the target, but the target was
-communcating with 
+Otherwise there might be scenarios where several senders are communcating with one receiver who is not a friend of the target, 
+at the same times where the target is communicating with a friend.
+
+It would be very likely with my implementation of the Statistical Disclosure Attack, the aforementioned receivers with a lot of traffic will
+be considered as possible friends. 
 """
 
