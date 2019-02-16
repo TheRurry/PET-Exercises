@@ -13,7 +13,7 @@
 #
 
 ###########################
-# Group Members: TODO
+# Group Members: Ryan Collins
 ###########################
 
 
@@ -28,12 +28,13 @@ def setup():
     return (G, g, h, o)
 
 def keyGen(params):
-   """ Generate a private / public key pair """
-   (G, g, h, o) = params
-   
-   # ADD CODE HERE
-
-   return (priv, pub)
+    """ Generate a private / public key pair """
+    (G, g, h, o) = params
+    
+    # ADD CODE HERE
+    priv = o.random()
+    pub = priv * g
+    return (priv, pub)
 
 def encrypt(params, pub, m):
     """ Encrypt a message under the public key """
@@ -41,7 +42,9 @@ def encrypt(params, pub, m):
         raise Exception("Message value to low or high.")
 
    # ADD CODE HERE
-
+    (G, g, h, o) = params
+    k = o.random()
+    c = (k*g, k*pub + m*h)
     return c
 
 def isCiphertext(params, ciphertext):
@@ -76,7 +79,7 @@ def decrypt(params, priv, ciphertext):
     a , b = ciphertext
 
    # ADD CODE HERE
-
+    hm = b - (priv*a)
     return logh(params, hm)
 
 #####################################################
@@ -92,7 +95,9 @@ def add(params, pub, c1, c2):
     assert isCiphertext(params, c2)
 
    # ADD CODE HERE
-
+    a0, b0 = c1
+    a1, b1 = c2
+    c3 = (a0 + a1, b0 + b1)
     return c3
 
 def mul(params, pub, c1, alpha):
@@ -101,7 +106,8 @@ def mul(params, pub, c1, alpha):
     assert isCiphertext(params, c1)
 
    # ADD CODE HERE
-
+    a, b = c1
+    c3 = (alpha * a, alpha * b)
     return c3
 
 #####################################################
@@ -114,7 +120,7 @@ def groupKey(params, pubKeys=[]):
     (G, g, h, o) = params
 
    # ADD CODE HERE
-
+    
     return pub
 
 def partialDecrypt(params, priv, ciphertext, final=False):
