@@ -177,8 +177,8 @@ def process_votes(params, pub, encrypted_votes):
     assert isinstance(encrypted_votes, list)
     
    # ADD CODE HERE
-    v_add = lambda x,y : add(params, pub, x, y)
-    tv0, tv1 = map(lambda v : reduce(v_add, v), zip(*encrypted_votes))
+    v_add = lambda x,y : add(params, pub, x, y)                         # recuducer for adding ciphertexts
+    tv0, tv1 = map(lambda v : reduce(v_add, v), zip(*encrypted_votes))  # apply reducer to unzipped encrypted_votes
     return tv0, tv1
 
 def simulate_poll(votes):
