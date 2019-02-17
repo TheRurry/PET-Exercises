@@ -168,7 +168,7 @@ def encode_vote(params, pub, vote):
     # ADD CODE HERE
     v0 = encrypt(params, pub, 1) # default return values for vote 0
     v1 = encrypt(params, pub, 0)
-    if vote: v0, v1 = v1, v0 # swap values if vote 1
+    if vote: v0, v1 = v1, v0     # swap values if vote 1
     return (v0, v1)
 
 def process_votes(params, pub, encrypted_votes):
