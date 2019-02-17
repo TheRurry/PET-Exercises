@@ -120,7 +120,7 @@ def groupKey(params, pubKeys=[]):
     (G, g, h, o) = params
 
    # ADD CODE HERE
-    
+    pub = reduce(lambda x,y : x+y, pubKeys)
     return pub
 
 def partialDecrypt(params, priv, ciphertext, final=False):
@@ -129,6 +129,8 @@ def partialDecrypt(params, priv, ciphertext, final=False):
     assert isCiphertext(params, ciphertext)
     
     # ADD CODE HERE
+    (a1, b1) = ciphertext
+    b1 -= priv * a1
 
     if final:
         return logh(params, b1)
