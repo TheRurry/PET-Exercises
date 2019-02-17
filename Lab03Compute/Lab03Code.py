@@ -151,7 +151,7 @@ def corruptPubKey(params, priv, OtherPubKeys=[]):
     (G, g, h, o) = params
     
    # ADD CODE HERE
-
+    pub = priv*g - groupKey(params, OtherPubKeys)
     return pub
 
 #####################################################
@@ -165,8 +165,10 @@ def encode_vote(params, pub, vote):
         zero and the votes for one."""
     assert vote in [0, 1]
 
-   # ADD CODE HERE
-
+    # ADD CODE HERE
+    v0 = encrypt(params, pub, 1) # default return values for vote 0
+    v1 = encrypt(params, pub, 0)
+    if vote: v0, v1 = v1, v0 # swap values if vote 1
     return (v0, v1)
 
 def process_votes(params, pub, encrypted_votes):
@@ -175,7 +177,8 @@ def process_votes(params, pub, encrypted_votes):
     assert isinstance(encrypted_votes, list)
     
    # ADD CODE HERE
-
+    v_add = lambda x,y : add(params, pub, x, y)
+    tv0, tv1 = map(lambda v : reduce(v_add, v), zip(*encrypted_votes))
     return tv0, tv1
 
 def simulate_poll(votes):
