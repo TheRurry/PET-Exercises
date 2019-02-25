@@ -177,7 +177,7 @@ def process_votes(params, pub, encrypted_votes):
     assert isinstance(encrypted_votes, list)
     
    # ADD CODE HERE
-    v_add = lambda x,y : add(params, pub, x, y)                         # recuducer for adding ciphertexts
+    v_add = lambda x,y : add(params, pub, x, y)                         # reducer for adding ciphertexts
     tv0, tv1 = map(lambda v : reduce(v_add, v), zip(*encrypted_votes))  # apply reducer to unzipped encrypted_votes
     return tv0, tv1
 
@@ -228,7 +228,20 @@ def simulate_poll(votes):
 # What is the advantage of the adversary in guessing b given your implementation of 
 # Homomorphic addition? What are the security implications of this?
 
-""" Your Answer here """
+"""
+The implementation of homomorphic addition "add" is deterministic, which means if the attacker has access to
+"add" or knowledge of its implementation, they can simply "add" Ca with Cb, and Cb with Cc. To guess the value
+of b they can compare the two resultant values with C and choose b = 0 if C is equivalent to Ca "add" Cb, and 
+b = 1 if C is equivalent to Cb "add" Cc.  
+
+The fact that this implementation of homomorphic addtion is determinstic, there can be concerns of anonymity 
+being violated. In a scenario where we have a selection of users each producing a ciphertext, and one of those 
+users is malicious, if the attacker knows who has produced each ciphertext, they will be able to determine
+which user's ciphertext has been added on to theirs. Since homorphic addition when decrypted provided the addtion 
+of two plaintext values, if they see the decrypted value they will be able to subtract their plaintext value, 
+and determine a plaintext value for an honest user's ciphertext.
+"""
+
 
 ###########################################################
 # TASK Q2 -- Answer questions regarding your implementation
@@ -239,4 +252,16 @@ def simulate_poll(votes):
 # that it yields an arbitrary result. Can those malicious actions 
 # be detected given your implementation?
 
-""" Your Answer here """
+"""
+a) A malicious user can change the implementation of encode vote to return a 2-tuple where both values are 0 
+encoded with the group public key. This would result in the total vote counts of both 1 and 0 being 0.
+
+b) Assuming the malicious user knows the total number of votes which are going to be made, they can change encode
+vote to return a 2-tuple where the first value is the desired total count of 0 votes / len(votes) encrypted
+with the group public key, and the second value is the desired total count of 1 votes / len(votes) encrypted
+with the group public key.
+
+In most cases these malicious actions can be detected by checking to make sure if the total count of 0 votes
++ the total count of 1 votes == len(votes). If they are not equal we can be certain that something has gone 
+wrong, most likely the result of malicious actions.
+"""
