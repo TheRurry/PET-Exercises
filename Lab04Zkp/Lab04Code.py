@@ -7,7 +7,7 @@
 # $ py.test -v test_file_name.py
 
 ###########################
-# Group Members: TODO
+# Group Members: Ryan Collins
 ###########################
 
 from petlib.ec import EcGroup
@@ -94,7 +94,15 @@ def proveCommitment(params, C, r, secrets):
     x0, x1, x2, x3 = secrets
 
     ## YOUR CODE HERE:
-
+    w = [o.random() for _ in range(5)]
+    W = w[0]*h0 + w[1]*h1 + w[2]*h2 + w[3]*h3 + w[4]*g
+    c = to_challenge([g, h0, h1, h2, h3, W])
+    r0 = w[0] - (c * x0)
+    r1 = w[1] - (c * x1)
+    r2 = w[2] - (c * x2)
+    r3 = w[3] - (c * x3)
+    rr = w[4] - (c * r)
+    responses = (r0, r1, r2, r3, rr)
     return (c, responses)
 
 def verifyCommitments(params, C, proof):
@@ -142,7 +150,7 @@ def verifyDLEquality(params, K, L, proof):
 
     ## YOUR CODE HERE:
 
-    return # YOUR RETURN HERE
+    return 1
 
 #####################################################
 # TASK 4 -- Prove correct encryption and knowledge of 
