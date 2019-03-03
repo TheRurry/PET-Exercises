@@ -52,7 +52,9 @@ def proveKey(params, priv, pub):
     (G, g, hs, o) = params
     
     ## YOUR CODE HERE:
-    
+    w = o.random()
+    c = to_challenge([g, w * g])
+    r = w - (c * priv)
     return (c, r)
 
 def verifyKey(params, pub, proof):
