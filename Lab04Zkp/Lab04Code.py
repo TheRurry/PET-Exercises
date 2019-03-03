@@ -149,8 +149,10 @@ def verifyDLEquality(params, K, L, proof):
     c, r = proof
 
     ## YOUR CODE HERE:
-    
-    return 1
+    Kw = r*g + c*K
+    Lw = r*h0 + c*L
+    c_prime = to_challenge([g, h0, Kw, Lw])
+    return c_prime == c
 
 #####################################################
 # TASK 4 -- Prove correct encryption and knowledge of 
