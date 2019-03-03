@@ -149,7 +149,7 @@ def verifyDLEquality(params, K, L, proof):
     c, r = proof
 
     ## YOUR CODE HERE:
-
+    
     return 1
 
 #####################################################
