@@ -54,7 +54,7 @@ def proveKey(params, priv, pub):
     ## YOUR CODE HERE:
     w = o.random()
     c = to_challenge([g, w * g])
-    r = w - (c * priv)
+    r = (w - c * priv) % o
     return (c, r)
 
 def verifyKey(params, pub, proof):
@@ -97,11 +97,11 @@ def proveCommitment(params, C, r, secrets):
     w = [o.random() for _ in range(5)]
     W = w[0]*h0 + w[1]*h1 + w[2]*h2 + w[3]*h3 + w[4]*g
     c = to_challenge([g, h0, h1, h2, h3, W])
-    r0 = w[0] - (c * x0)
-    r1 = w[1] - (c * x1)
-    r2 = w[2] - (c * x2)
-    r3 = w[3] - (c * x3)
-    rr = w[4] - (c * r)
+    r0 = (w[0] - c * x0) % o
+    r1 = (w[1] - c * x1) % o
+    r2 = (w[2] - c * x2) % o
+    r3 = (w[3] - c * x3) % o
+    rr = (w[4] - c * r) % o
     responses = (r0, r1, r2, r3, rr)
     return (c, responses)
 
@@ -149,8 +149,8 @@ def verifyDLEquality(params, K, L, proof):
     c, r = proof
 
     ## YOUR CODE HERE:
-    Kw = r*g + c*K
-    Lw = r*h0 + c*L
+    Kw = r * g + c * K
+    Lw = r * h0 + c * L
     c_prime = to_challenge([g, h0, Kw, Lw])
     return c_prime == c
 
@@ -176,7 +176,11 @@ def proveEnc(params, pub, Ciphertext, k, m):
     a, b = Ciphertext
 
     ## YOUR CODE HERE:
-
+    w = [o.random() for _ in range(2)]
+    W = w[0] * h0 + w[1] * g + w[1] * pub
+    c = to_challenge([g, h0, pub, W])
+    rm = (w[0] - c * m) % o
+    rk = (w[1] - c * k) % o
     return (c, (rk, rm))
 
 def verifyEnc(params, pub, Ciphertext, proof):
@@ -186,8 +190,11 @@ def verifyEnc(params, pub, Ciphertext, proof):
     (c, (rk, rm)) = proof
 
     ## YOUR CODE HERE:
-
-    return ## YOUR RETURN HERE
+    kW = rk * g + c * a
+    mW = rm * h0 + rk * pub + c * b
+    W = kW + mW
+    c_prime = to_challenge([g, h0, pub, W])
+    return c_prime == c
 
 
 #####################################################
