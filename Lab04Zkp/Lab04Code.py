@@ -177,8 +177,9 @@ def proveEnc(params, pub, Ciphertext, k, m):
 
     ## YOUR CODE HERE:
     w = [o.random() for _ in range(2)]
-    W = w[0] * h0 + w[1] * g + w[1] * pub
-    c = to_challenge([g, h0, pub, W])
+    W0 = w[1] * g
+    W1 = w[0] * h0 + w[1] * pub
+    c = to_challenge([g, h0, pub, W0, W1])
     rm = (w[0] - c * m) % o
     rk = (w[1] - c * k) % o
     return (c, (rk, rm))
@@ -190,10 +191,9 @@ def verifyEnc(params, pub, Ciphertext, proof):
     (c, (rk, rm)) = proof
 
     ## YOUR CODE HERE:
-    kW = rk * g + c * a
-    mW = rm * h0 + rk * pub + c * b
-    W = kW + mW
-    c_prime = to_challenge([g, h0, pub, W])
+    W0 = rk * g + c * a
+    W1 = rm * h0 + rk * pub + c * b
+    c_prime = to_challenge([g, h0, pub, W0, W1])
     return c_prime == c
 
 
