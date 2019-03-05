@@ -218,16 +218,22 @@ def prove_x0eq10x1plus20(params, C, x0, x1, r):
     (G, g, (h0, h1, h2, h3), o) = params
 
     ## YOUR CODE HERE:
-
-    return ## YOUR RETURN HERE
+    w = [o.random() for _ in range(2)]
+    W = 10 * w[0] * h0 + w[0] * h1 + w[1] * g
+    c = to_challenge([g, h0, h1, C, W])
+    rx = (w[0] - c * x1) % o
+    rr = (w[1] - c * r) % o
+    return (c, (rx, rr))
 
 def verify_x0eq10x1plus20(params, C, proof):
     """ Verify that proof of knowledge of C and x0 = 10 x1 + 20. """
     (G, g, (h0, h1, h2, h3), o) = params
 
     ## YOUR CODE HERE:
-
-    return ## YOUR RETURN HERE
+    (c, (rx, rr)) = proof
+    W = 10 * rx * h0 + rx * h1 + rr * g + c * (C - 20*h0)
+    c_prime = to_challenge([g, h0, h1, C, W])
+    return c_prime == c
 
 #####################################################
 # TASK 6 -- (OPTIONAL) Prove that a ciphertext is either 0 or 1
@@ -272,7 +278,11 @@ def test_bin_incorrect():
 # that  deviates from the Schnorr identification protocol? Justify 
 # your answer by describing what a dishonest verifier may do.
 
-""" TODO: Your answer here. """
+""" TODO: Your answer here. 
+
+"Plausible deniability" does not hold against dishonest verifier that deviates
+from the Schnorr identification protocol.
+"""
 
 #####################################################
 # TASK Q2 - Answer the following question:
@@ -285,7 +295,10 @@ def test_bin_incorrect():
 #
 # Hint: Look at "test_prove_something" too.
 
-""" TODO: Your answer here. """
+""" TODO: Your answer here. 
+
+
+"""
 
 def prove_something(params, KX, KY, y):
     (G, g, _, o) = params
