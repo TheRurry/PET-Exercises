@@ -306,14 +306,16 @@ third party can then check c = H(W) as well as g^r * pub^c = W.
 """ TODO: Your answer here. 
 
 The verifier is convinced that the prover knows at least one of the secrets x, y.
-- The reason it can be sure that the prover knows at least one of the secrets is that the challenge 
-c is computed using both of the witnesses W_KX and W_KY so it can not be simulating both secrets.
-- The reason it can not be sure it be sure that the prover knows both secrets is because
-c1 + c2 = c, means that one of the witnesses could be generated using c1 or c2 before c is
-computed, then the other challange could be calculated using c1 = c - c2 or c2 = c - c1 after
-c is computed. The verifier has no idea whether or not this has been done and if it has which
-c1 or c2 was generated before c is computed (in prove_something we can see c2 = c - c1), so it can
-only be sure it knows either x or y or both.
+- The reason it can be sure that the prover knows at least one of the secrets is 
+that the challenge c is computed using both of the witnesses W_KX and W_KY so it 
+can not be simulating both secrets.
+- The reason it can not be sure it be sure that the prover knows both secrets is 
+because c1 + c2 = c, means that one of the witnesses could be generated using c1 
+or c2 before c is computed, then the other challange could be calculated using 
+c1 = c - c2 or c2 = c - c1 after c is computed. The verifier has no idea whether 
+or not this has been done and if it has which c1 or c2 was generated before c is 
+computed (in prove_something we can see c2 = c - c1), so it can only be sure it 
+knows either x or y or both.
 """
 
 def prove_something(params, KX, KY, y):
