@@ -231,7 +231,7 @@ def verify_x0eq10x1plus20(params, C, proof):
 
     ## YOUR CODE HERE:
     (c, (rx, rr)) = proof
-    W = 10 * rx * h0 + rx * h1 + rr * g + c * (C - 20*h0)
+    W = 10 * rx * h0 + rx * h1 + rr * g + c * (C - 20 * h0)
     c_prime = to_challenge([g, h0, h1, C, W])
     return c_prime == c
 
