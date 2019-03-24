@@ -260,7 +260,7 @@ def credential_show(params, issuer_pub_params, u, u_prime, v):
 
     # TODO 2
     z1 = o.random()
-    Cv = v*u * z1*h
+    Cv = v * u + z1 * h
     r = o.random()
     Cup = u_prime + r * g
     tag = (u, Cv, Cup)
@@ -273,7 +273,7 @@ def credential_show(params, issuer_pub_params, u, u_prime, v):
 
     ## TODO proof
     secrets = ["r", "z1", "v"]
-    w = [secret: o.random() for secret in secrets]
+    w = {secret: o.random() for secret in secrets}
     c = to_challenge([
         g, h, u, X1, Cv, Cup, Cx0,
         r * (-g) + z1 * X1,
@@ -302,7 +302,7 @@ def credential_show_verify(params, issuer_params, tag, proof):
 
     ## TODO
     V = (x0 * u + x1 * Cv) - Cup
-    c_prime = = to_challenge([
+    c_prime = to_challenge([
             g, h, u, X1, Cv, Cup, Cx0, V,
             c * Cv + rv * u  + rz1 * h,
             c * V + rr * (-g) + rz1 * X1
