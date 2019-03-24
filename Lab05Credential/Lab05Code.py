@@ -251,12 +251,18 @@ def credential_show(params, issuer_pub_params, u, u_prime, v):
     #    random alpha.
     
     # TODO 1
+    alpha = o.random()
+    u = alpha *  u
+    u_prime = alpha * u_prime
 
     # 2) Implement the "Show" protocol (p.9) for a single attribute v.
     #    Cv is a commitment to v and Cup is C_{u'} in the paper. 
 
     # TODO 2
-
+    z1 = o.random()
+    Cv = v*u * z1*h
+    r = o.random()
+    Cup = u_prime + r * g
     tag = (u, Cv, Cup)
 
     # Proof or knowledge of the statement
@@ -266,7 +272,17 @@ def credential_show(params, issuer_pub_params, u, u_prime, v):
     #           V  = r * (-g) + z1 * X1 }
 
     ## TODO proof
-
+    secrets = ["r", "z1", "v"]
+    w = [secret: o.random() for secret in secrets]
+    c = to_challenge([
+        g, h, u, X1, Cv, Cup, Cx0,
+        r * (-g) + z1 * X1,
+        w["v"] * u + w["z1"] * h,
+        w["r"] * (-g) + w["z1"] * X1
+    ])
+    rr = (w["r"] - c * r) % o
+    rz1 = (w["z1"] - c * z1) % o
+    rv = (w["v"] - c * v) % o
     proof = (c, rr, rz1, rv)
     return tag, proof
 
@@ -285,7 +301,12 @@ def credential_show_verify(params, issuer_params, tag, proof):
     (u, Cv, Cup) = tag
 
     ## TODO
-
+    V = (x0 * u + x1 * Cv) - Cup
+    c_prime = = to_challenge([
+            g, h, u, X1, Cv, Cup, Cx0, V,
+            c * Cv + rv * u  + rz1 * h,
+            c * V + rr * (-g) + rz1 * X1
+    ])
     return c == c_prime
 
 #####################################################
