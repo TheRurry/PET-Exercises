@@ -150,9 +150,10 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     #     and x1b = (b * x1) mod o 
     
     # TODO 1 & 2
-    u = b * g
-    X1b = b * X1
-    x1b = (b * x1) % o 
+    beta = o.random()
+    u = beta * g
+    X1b = beta * X1
+    x1b = (beta * x1) % o
 
     # 3) The encrypted MAC is u, and an encrypted u_prime defined as 
     #    E( (b*x0) * g + (x1 * b * v) * g ) + E(0; r_prime)
@@ -160,7 +161,7 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     # TODO 3
     r_prime = o.random()
     new_a = r_prime * g + x1b * a
-    new_b = r_prime * pub + x1b * b + x0 * u 
+    new_b = r_prime * pub + x1b * b + x0 * u
     ciphertext = new_a, new_b
 
     ## A large ZK proof that:
@@ -174,9 +175,20 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     #       Cx0 = x0 * g + x0_bar * h }
 
     ## TODO proof
-    c = to_challenge([g])
+    secrets = ["x1", "beta", "x1b", "r_prime", "x0", "x0_bar"]
+    s = {secret: value for secret, value in zip(secrets, [x1, beta, x1b, r_prime, x0, x0_bar])}
+    w = {secret: o.random() for secret in secrets}
+    c = to_challenge([g, h, pub, a, b, X1, X1b, new_a, new_b, Cx0,
+                w["x1"] * h,
+                w["beta"] * X1,
+                w["x1b"] * h,
+                w["beta"] * g,
+                w["r_prime"] * g + w["x1b"] * a,
+                w["r_prime"] * pub + w["x1b"] * b + w["x0"] * u,
+                w["x0"] * g + w["x0_bar"] * h
+                ])
+    rs = [(w[secret] - c * s[secret]) % o for secret in secrets]
     proof = (c, rs, X1b) # Where rs are multiple responses
-
     return u, ciphertext, proof
 
 def credential_Verify_Issuing(params, issuer_pub_params, pub, u, Enc_v, Enc_u_prime, proof):
