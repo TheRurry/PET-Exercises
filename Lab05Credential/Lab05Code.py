@@ -400,7 +400,7 @@ def credential_show_verify_pseudonym(params, issuer_params, pseudonym, tag, proo
 In this scenario our 3 parties would be as follows:
 - Issuer: Bank or entity which has the real money.
 - Prover: The user wanting to spend their e-cash.
-- Vertifier: Place where e-cash can be spent.
+- Verifier: Place where e-cash can be spent.
 
 An example of the steps we would be expect would be:
 - The prover requests credentials that contain: {
