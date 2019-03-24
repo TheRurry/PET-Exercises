@@ -395,4 +395,33 @@ def credential_show_verify_pseudonym(params, issuer_params, pseudonym, tag, proo
 # What would the credential represent, and what statements
 # would need to be shown to a verifier.
 
-""" Your answer here. """
+""" Your answer here. 
+
+In this scenario our 3 parties would be as follows:
+- Issuer: Bank or entity which has the real money.
+- Prover: The user wanting to spend their e-cash.
+- Vertifier: Place where e-cash can be spent.
+
+An example of the steps we would be expect would be:
+- The prover requests credentials that contain: {
+    - The amount of money the prover wants to spend.
+    - A unique number for this particular issuing (henceforth referred to as "secret").
+}
+- After receiving the crendentials from the issuer, the prover can then: {
+    - Define a pseudonym as secret * H(service_name)
+    - Construct a NIZK that proves the attributes with the crendentials as detailed in show alogirthm.
+    - Add secret * H(service_name) = pseudonym to the NIZK.
+}
+- After receiving the NIZK from the prover, the verifier can then: {
+    - Verify the NIZK as detailed in the show_verify algorithm.
+    - Check to see if they have already seen the psuedonym before: {
+        - If they have they can reject the transaction.
+        - Else perform an online check, accept the transcation, and record the pseudonym.
+    }
+}
+- Privacy is ensured because: {
+    - Crendentials are a one time use.
+    - No identifying attributes are included in the crendentials.
+    - Every set of crendentials will be unique due the unique number attribute.
+}
+"""
