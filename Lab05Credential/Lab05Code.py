@@ -330,7 +330,31 @@ def credential_show_pseudonym(params, issuer_pub_params, u, u_prime, v, service_
     pseudonym = v * N
 
     ## TODO (use code from above and modify as necessary!)
+    
+    # Show
+    alpha = o.random()
+    u = alpha *  u
+    u_prime = alpha * u_prime
+    z1 = o.random()
+    Cv = v * u + z1 * h
+    r = o.random()
+    Cup = u_prime + r * g
+    tag = (u, Cv, Cup)
 
+    # Proof
+    secrets = ["r", "z1", "v"]
+    w = {secret: o.random() for secret in secrets}
+    c = to_challenge([
+        g, h, u, X1, Cv, Cup, Cx0,
+        r * (-g) + z1 * X1,
+        w["v"] * u + w["z1"] * h,
+        w["r"] * (-g) + w["z1"] * X1,
+        w["v"] * N # Pseudonym proof
+    ])
+    rr = (w["r"] - c * r) % o
+    rz1 = (w["z1"] - c * z1) % o
+    rv = (w["v"] - c * v) % o
+    proof = (c, rr, rz1, rv)
     return pseudonym, tag, proof
 
 def credential_show_verify_pseudonym(params, issuer_params, pseudonym, tag, proof, service_name):
@@ -350,7 +374,16 @@ def credential_show_verify_pseudonym(params, issuer_params, pseudonym, tag, proo
     ## Verify the correct Show protocol and the correctness of the pseudonym
 
     # TODO (use code from above and modify as necessary!)
+    (c, rr, rz1, rv) = proof
+    (u, Cv, Cup) = tag
 
+    V = (x0 * u + x1 * Cv) - Cup
+    c_prime = to_challenge([
+            g, h, u, X1, Cv, Cup, Cx0, V,
+            c * Cv + rv * u  + rz1 * h,
+            c * V + rr * (-g) + rz1 * X1,
+            c * pseudonym + rv * N # Pseudonym verification
+    ])
     return c == c_prime
 
 #####################################################
