@@ -7,7 +7,7 @@
 # $ py.test -v test_file_name.py
 
 ###########################
-# Group Members: TODO
+# Group Members: Ryan Collins
 ###########################
 
 from petlib.ec import EcGroup
@@ -91,7 +91,14 @@ def credential_EncryptUserSecret(params, pub, priv):
     #                     pub = priv * g}
 
     ## TODO
-
+    w = [o.random() for _ in range(3)]
+    Wap = w[0] * g
+    Wbp = w[0] * pub + w[1] * g
+    Wpubp = w[2] * g
+    c = to_challenge([g, pub, a, b, Wap, Wbp, Wpubp])
+    rk = (w[0] - c * k) % o
+    rv = (w[1] - c * v) % o
+    rpriv = (w[2] - c * priv) % o
     # Return the fresh v, the encryption of v and the proof.
     proof = (c, rk, rv, rpriv)
     return v, ciphertext, proof
@@ -143,12 +150,17 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     #     and x1b = (b * x1) mod o 
     
     # TODO 1 & 2
+    u = b * g
+    X1b = b * X1
+    x1b = (b * x1) % o 
 
     # 3) The encrypted MAC is u, and an encrypted u_prime defined as 
     #    E( (b*x0) * g + (x1 * b * v) * g ) + E(0; r_prime)
     
     # TODO 3
-
+    r_prime = o.random()
+    new_a = r_prime * g + x1b * a
+    new_b = r_prime * pub + x1b * b + x0 * u 
     ciphertext = new_a, new_b
 
     ## A large ZK proof that:
@@ -162,7 +174,7 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     #       Cx0 = x0 * g + x0_bar * h }
 
     ## TODO proof
-
+    c = to_challenge([g])
     proof = (c, rs, X1b) # Where rs are multiple responses
 
     return u, ciphertext, proof
